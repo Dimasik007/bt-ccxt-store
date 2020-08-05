@@ -174,7 +174,7 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
 
     @retry
     def cancel_order(self, order_id, symbol, params):
-        return self.exchange.cancel_order(order_id, symbol, params)
+        return self.exchange.cancel_order(order_id, symbol, params=params)
 
     @retry
     def fetch_trades(self, symbol):
