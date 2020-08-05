@@ -28,8 +28,10 @@ class TestStrategy(bt.Strategy):
         for data in self.datas:
 
             print('{} - {} | Cash {} | O: {} H: {} L: {} C: {} V:{} SMA:{}'.format(data.datetime.datetime(),
-                                                                                   data._name, cash, data.open[0], data.high[0], data.low[0], data.close[0], data.volume[0],
-                                                                                   self.sma[0]))
+                                                                                   data._name,     cash,
+                                                                                   data.open[0],   data.high[0],
+                                                                                   data.low[0],    data.close[0],
+                                                                                   data.volume[0], self.sma[0]))
 
     def notify_data(self, data, status, *args, **kwargs):
         dn = data._name

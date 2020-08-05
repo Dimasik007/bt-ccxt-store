@@ -29,7 +29,7 @@ import backtrader as bt
 import ccxt
 from backtrader.metabase import MetaParams
 from backtrader.utils.py3 import with_metaclass
-from ccxt.base.errors import NetworkError, ExchangeError
+from ccxt.base.errors import NetworkError, ExchangeError, OrderNotFound
 
 
 class MetaSingleton(MetaParams):
@@ -187,8 +187,15 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         return self.exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since, limit=limit, params=params)
 
     @retry
-    def fetch_order(self, oid, symbol):
-        return self.exchange.fetch_order(oid, symbol)
+    def fetch_order(self, oid, symbol, params={}):  # MODIFIED - added params parameter________________________________
+        if self.debug:
+            print(f'ccxtStore - fetching order {oid}, {symbol}, params {params}')
+        try:
+            order = self.exchange.fetch_order(oid, symbol, params=params)
+        except OrderNotFound as e:
+            print(f'ccxt order not found error: {e}')
+            order = list()
+        return order  # _______________________________________________
 
     @retry
     def fetch_open_orders(self):

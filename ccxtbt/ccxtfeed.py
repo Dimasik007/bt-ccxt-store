@@ -71,7 +71,7 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
         ('fetch_ohlcv_params', {}),
         ('ohlcv_limit', 20),
         ('drop_newest', False),
-        ('debug', False)
+        ('debug', True)
     )
 
     _store = CCXTStore

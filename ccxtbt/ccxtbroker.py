@@ -110,7 +110,7 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             'value': 'canceled'}
     }
 
-    def __init__(self, broker_mapping=None, debug=False, **kwargs):
+    def __init__(self, broker_mapping=None, debug=True, **kwargs):
         super(CCXTBroker, self).__init__()
 
         if broker_mapping is not None:
@@ -182,7 +182,7 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
     def next(self):
         if self.debug:
             print('Broker next() called')
-        
+
         for o_order in list(self.open_orders):
             oID = o_order.ccxt_order['id']
 
@@ -192,15 +192,22 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
                 print('Fetching Order ID: {}'.format(oID))
 
             # Get the order
-            ccxt_order = self.store.fetch_order(oID, o_order.data.p.dataname)
-            
+            ccxt_order = self.store.fetch_order(oID, o_order.data.p.dataname,
+                                                params={'type': 'future'})  # ADDED PARAMS HERE
             # Check for new fills
-            if 'trades' in ccxt_order:
+            if self.debug:
+                print(f'checking for trades in ccxt_order - ccxt_order is {ccxt_order}')
+
+            if ccxt_order['trades'] is not None:  # added explicit check for None otherwise it was proceeding
+
+                if self.debug:
+                    print('reading trades in ccxt_order')
+
                 for fill in ccxt_order['trades']:
                     if fill not in o_order.executed_fills:
-                        o_order.execute(fill['datetime'], fill['amount'], fill['price'], 
-                                        0, 0.0, 0.0, 
-                                        0, 0.0, 0.0, 
+                        o_order.execute(fill['datetime'], fill['amount'], fill['price'],
+                                        0, 0.0, 0.0,
+                                        0, 0.0, 0.0,
                                         0.0, 0.0,
                                         0, 0.0)
                         o_order.executed_fills.append(fill['id'])
@@ -210,6 +217,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
 
             # Check if the order is closed
             if ccxt_order[self.mappings['closed_order']['key']] == self.mappings['closed_order']['value']:
+                if self.debug:
+                    print('checking for closed status to notify of trade')
                 pos = self.getposition(o_order.data, clone=False)
                 pos.update(o_order.size, o_order.price)
                 o_order.completed()
@@ -218,21 +227,27 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
                 self.get_balance()
 
     def _submit(self, owner, data, exectype, side, amount, price, params):
-        order_type = self.order_types.get(exectype) if exectype else 'market'
-        created = int(data.datetime.datetime(0).timestamp()*1000)
+
+        if self.debug:
+            print(f'entering _submit method')
+
+        order_type = self.order_types.get(exectype)  # if exectype else 'market'
+        created = int(data.datetime.datetime(0).timestamp() * 1000)
         # Extract CCXT specific params if passed to the order
         params = params['params'] if 'params' in params else params
         params['created'] = created  # Add timestamp of order creation for backtesting
         ret_ord = self.store.create_order(symbol=data.p.dataname, order_type=order_type, side=side,
                                           amount=amount, price=price, params=params)
 
-        _order = self.store.fetch_order(ret_ord['id'], data.p.dataname)
+        _order = self.store.fetch_order(ret_ord['id'], data.p.dataname, params=params)  # MODIFIED - ADDED PARAMS
 
         order = CCXTOrder(owner, data, _order)
         order.price = ret_ord['price']
         self.open_orders.append(order)
 
         self.notify(order)
+        if self.debug:
+            print(f'returning from _submit method')
         return order
 
     def buy(self, owner, data, size, price=None, plimit=None,
@@ -241,6 +256,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             **kwargs):
         del kwargs['parent']
         del kwargs['transmit']
+        if self.debug:
+            print(f'buy order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
         return self._submit(owner, data, exectype, 'buy', size, price, kwargs)
 
     def sell(self, owner, data, size, price=None, plimit=None,
@@ -249,6 +266,10 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
              **kwargs):
         del kwargs['parent']
         del kwargs['transmit']
+
+        if self.debug:
+            print(f'sell order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
+
         return self._submit(owner, data, exectype, 'sell', size, price, kwargs)
 
     def cancel(self, order):
