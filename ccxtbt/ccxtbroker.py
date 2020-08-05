@@ -272,7 +272,7 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
 
         return self._submit(owner, data, exectype, 'sell', size, price, kwargs)
 
-    def cancel(self, order):
+    def cancel(self, order, **kwargs):
 
         oID = order.ccxt_order['id']
 
@@ -282,7 +282,7 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
 
         # check first if the order has already been filled otherwise an error
         # might be raised if we try to cancel an order that is not open.
-        ccxt_order = self.store.fetch_order(oID, order.data.p.dataname)
+        ccxt_order = self.store.fetch_order(oID, order.data.p.dataname, kwargs)
 
         if self.debug:
             print(json.dumps(ccxt_order, indent=self.indent))
@@ -290,7 +290,7 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
         if ccxt_order[self.mappings['closed_order']['key']] == self.mappings['closed_order']['value']:
             return order
 
-        ccxt_order = self.store.cancel_order(oID, order.data.p.dataname)
+        ccxt_order = self.store.cancel_order(oID, order.data.p.dataname, kwargs)
 
         if self.debug:
             print(json.dumps(ccxt_order, indent=self.indent))
