@@ -202,8 +202,12 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         return self.exchange.fetchOpenOrders(symbol=symbol, since=since, limit=limit, params=params)
 
     @retry
+    def fetch_open_trades(self, symbol=None, since=None, limit=None, params={}):
+        return self.exchange.fetch_my_trades(symbol=symbol, since=since, limit=limit, params=params)
+
+    @retry
     def private_end_point(self, type, endpoint, params):
-        '''
+        """
         Open method to allow calls to be made to any private end point.
         See here: https://github.com/ccxt/ccxt/wiki/Manual#implicit-api-methods
 
@@ -218,5 +222,5 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         following:
 
         print(dir(ccxt.hitbtc()))
-        '''
+        """
         return getattr(self.exchange, endpoint)(params)
