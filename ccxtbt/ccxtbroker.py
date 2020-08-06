@@ -256,8 +256,10 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             **kwargs):
         del kwargs['parent']
         del kwargs['transmit']
+
         if self.debug:
             print(f'buy order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
+
         return self._submit(owner, data, exectype, 'buy', size, price, kwargs)
 
     def sell(self, owner, data, size, price=None, plimit=None,
@@ -271,6 +273,9 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             print(f'sell order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
 
         return self._submit(owner, data, exectype, 'sell', size, price, kwargs)
+
+    def close(self, owner, data, **kwargs):
+        pass
 
     def cancel(self, order, params={}):
 

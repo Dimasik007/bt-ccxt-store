@@ -198,8 +198,8 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         return order  # _______________________________________________
 
     @retry
-    def fetch_open_orders(self):
-        return self.exchange.fetchOpenOrders()
+    def fetch_open_orders(self, symbol=None, since=None, limit=None, params={}):
+        return self.exchange.fetchOpenOrders(symbol=symbol, since=since, limit=limit, params=params)
 
     @retry
     def private_end_point(self, type, endpoint, params):
