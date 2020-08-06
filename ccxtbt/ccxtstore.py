@@ -32,68 +32,6 @@ from backtrader.utils.py3 import with_metaclass
 from ccxt.base.errors import NetworkError, ExchangeError, OrderNotFound
 
 
-class binance(ccxt.binance):
-
-    def fetch_my_trades(self, symbol=None, since=None, limit=None, params={}):
-        if symbol is None:
-            raise ccxt.base.errors.ArgumentsRequired(self.id + ' fetchMyTrades requires a symbol argument')
-        self.load_markets()
-        market = self.market(symbol)
-        defaultType = self.safe_string_2(self.options, 'fetchMyTrades', 'defaultType', market['type'])
-        type = self.safe_string(params, 'type', defaultType)
-        method = 'privateGetMyTrades'
-        if type == 'future':
-            method = 'fapiPrivateGetUserTrades'
-        request = {
-            'symbol': market['id'],
-        }
-        if since is not None:
-            request['startTime'] = since
-        if limit is not None:
-            request['limit'] = limit
-        response = getattr(self, method)(self.extend(request, params))
-        #
-        # spot trade
-        #     [
-        #         {
-        #             "symbol": "BNBBTC",
-        #             "id": 28457,
-        #             "orderId": 100234,
-        #             "price": "4.00000100",
-        #             "qty": "12.00000000",
-        #             "commission": "10.10000000",
-        #             "commissionAsset": "BNB",
-        #             "time": 1499865549590,
-        #             "isBuyer": True,
-        #             "isMaker": False,
-        #             "isBestMatch": True,
-        #         }
-        #     ]
-        #
-        # futures trade
-        #
-        #     [
-        #         {
-        #             "accountId": 20,
-        #             "buyer": False,
-        #             "commission": "-0.07819010",
-        #             "commissionAsset": "USDT",
-        #             "counterPartyId": 653,
-        #             "id": 698759,
-        #             "maker": False,
-        #             "orderId": 25851813,
-        #             "price": "7819.01",
-        #             "qty": "0.002",
-        #             "quoteQty": "0.01563",
-        #             "realizedPnl": "-0.91539999",
-        #             "side": "SELL",
-        #             "symbol": "BTCUSDT",
-        #             "time": 1569514978020
-        #         }
-        #     ]
-        return self.parse_trades(response, market, since, limit)
-
-
 class MetaSingleton(MetaParams):
     '''Metaclass to make a metaclassed class a singleton'''
 
