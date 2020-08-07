@@ -167,6 +167,31 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         # return self.getvalue(currency)
 
     @retry
+    def get_open_positions(self, params={}):
+        poses = self.exchange.fetch_balance(params=params)
+        open_positions = list()
+        for pos in poses['info']['positions']:
+            if float(pos['entryPrice']) != 0.0:
+                open_positions.append(pos)
+        return open_positions
+
+    @retry
+    def get_binance_positions(self):
+        positions = self.exchange.fapiPrivate_get_positionrisk()
+        open_positions = list()
+        for pos in positions:
+            if float(pos['positionAmt']) != 0.0:
+                for value in pos:
+                    try:
+                        print(f'{value}: {pos[value]}')
+                        pos[value] = float(pos[value])
+                    except ValueError as e:
+                        print(f'ValueError {value}: {pos[value]}')
+                        pos[value] = pos[value]
+                open_positions.append(pos)
+        return open_positions
+
+    @retry
     def create_order(self, symbol, order_type, side, amount, price, params):
         # returns the order
         return self.exchange.create_order(symbol=symbol, type=order_type, side=side,

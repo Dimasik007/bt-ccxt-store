@@ -217,6 +217,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
 
             # Check if the order is closed
             if ccxt_order[self.mappings['closed_order']['key']] == self.mappings['closed_order']['value']:
+                # https://github.com/Dave-Vallance/bt-ccxt-store/compare/master...robobit:master
+                # check if order is closed and add commission info
                 if self.debug:
                     print('checking for closed status to notify of trade')
                 pos = self.getposition(o_order.data, clone=False)
@@ -226,7 +228,17 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
                 self.open_orders.remove(o_order)
                 self.get_balance()
 
+            # Manage case when an order is being Canceled from the Exchange
+            #  from https://github.com/juancols/bt-ccxt-store/
+            if ccxt_order[self.mappings['canceled_order']['key']] == self.mappings['canceled_order']['value']:
+                self.open_orders.remove(o_order)
+                o_order.cancel()
+                self.notify(o_order)
+
     def _submit(self, owner, data, exectype, side, amount, price, params):
+
+        if amount == 0 or price == 0:  # malformed order case
+            return None
 
         if self.debug:
             print(f'entering _submit method')
@@ -274,7 +286,23 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
 
         return self._submit(owner, data, exectype, 'sell', size, price, kwargs)
 
-    def close(self, owner, data, **kwargs):
+    def close(self, owner, data, size, all=False, **kwargs):
+
+        if self.debug:
+            print(f'close trade: {owner} | {data} | {size} | close all? {all} | {kwargs}')
+
+        open_positions = self.store.get_binance_positions()
+
+        if all:
+            print(f'we want to close all positions')
+            poses = [{p['symbol']: p['positionAmt']} for p in open_positions]
+            print(poses)
+            return
+
+        # possize = open_positions[0]['positionAmt']
+        possize = [abs(p['positionAmt']) for p in open_positions if p['symbol'] == data.p.dataname][0]
+
+        size = abs(size if size is not None else possize)
         pass
 
     def cancel(self, order, params={}):
@@ -310,8 +338,26 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             self.notify(order)
         return order
 
-    def get_orders_open(self, safe=False):
-        return self.store.fetch_open_orders()
+    def get_orders_open(self, safe=False, symbol=None):
+        ret = self.store.fetch_open_orders()
+        if symbol:
+            return [o for o in ret if o["symbol"] == symbol]
+        return ret
+
+    def update_open_orders_force(self, owner, data, simulated=False, filter_by_data_symbol=False):
+        filter_symbol = data.symbol if filter_by_data_symbol else None
+        orders = self.get_orders_open(symbol=filter_symbol)
+        self.open_orders = list()
+        for o in orders:
+            _order = self.store.fetch_order(o['id'], o['symbol'])
+            order = CCXTOrder(owner, data, _order, simulated=simulated)
+            if _order[self.mappings['open_order']['key']] == self.mappings['open_order']['value']:
+                order.accept(broker=self)
+            else:
+                pass
+
+            self.open_orders.append(order)
+            self.notify(order)
 
     def private_end_point(self, type, endpoint, params):
         '''
