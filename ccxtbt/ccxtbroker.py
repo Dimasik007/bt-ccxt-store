@@ -296,14 +296,31 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
         if all:
             print(f'we want to close all positions')
             poses = [{p['symbol']: p['positionAmt']} for p in open_positions]
-            print(poses)
-            return
+            if self.debug:
+                print(f'our positions {poses}')
+            # todo finish this
+            return None
 
-        # possize = open_positions[0]['positionAmt']
-        possize = [abs(p['positionAmt']) for p in open_positions if p['symbol'] == data.p.dataname][0]
+        print(f'data = {data.p.dataname}')
+        try:
+            possize = [p['positionAmt'] for p in open_positions if p['symbol'] == data.p.dataname][0]
+        except IndexError:
+            possize = None
+            if self.debug:
+                print(f'IndexError: list index out of range - symbol {data.p.dataname} not in current positions')
 
         size = abs(size if size is not None else possize)
-        pass
+
+        if possize > 0:
+            return self.sell(data=data, size=size, **kwargs)
+        elif possize < 0:
+            return self.buy(data=data, size=size, **kwargs)
+        elif possize is None:
+            if self.debug:
+                print(f'no position to close')
+            return None
+
+        return None
 
     def cancel(self, order, params={}):
 

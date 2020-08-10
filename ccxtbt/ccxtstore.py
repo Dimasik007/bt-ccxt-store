@@ -183,10 +183,12 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
             if float(pos['positionAmt']) != 0.0:
                 for value in pos:
                     try:
-                        print(f'{value}: {pos[value]}')
+                        if self.debug:
+                            print(f'{value}: {pos[value]}')
                         pos[value] = float(pos[value])
                     except ValueError as e:
-                        print(f'ValueError {value}: {pos[value]}')
+                        if self.debug:
+                            print(f'ValueError {value}: {pos[value]}')
                         pos[value] = pos[value]
                 open_positions.append(pos)
         return open_positions
