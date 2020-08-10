@@ -266,8 +266,10 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             exectype=None, valid=None, tradeid=0, oco=None,
             trailamount=None, trailpercent=None,
             **kwargs):
-        del kwargs['parent']
-        del kwargs['transmit']
+        # del kwargs['parent']
+        # del kwargs['transmit']
+        kwargs.__delitem__('parent') if 'parent' in kwargs else print('parent not there')
+        kwargs.__delitem__('transmit') if 'transmit' in kwargs else print('transmit not there')
 
         if self.debug:
             print(f'buy order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
@@ -278,8 +280,10 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
              exectype=None, valid=None, tradeid=0, oco=None,
              trailamount=None, trailpercent=None,
              **kwargs):
-        del kwargs['parent']
-        del kwargs['transmit']
+        # del kwargs['parent']
+        # del kwargs['transmit']
+        kwargs.__delitem__('parent') if 'parent' in kwargs else print('parent not there')
+        kwargs.__delitem__('transmit') if 'transmit' in kwargs else print('transmit not there')
 
         if self.debug:
             print(f'sell order: {owner} | {data} | {exectype} | {size} @ {price} | {kwargs}')
@@ -300,21 +304,23 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
                 print(f'our positions {poses}')
             # todo finish this
             return None
-
-        print(f'data = {data.p.dataname}')
+        symbol = data.p.dataname.replace('/', '')
+        print(f'data = {symbol}')
         try:
-            possize = [p['positionAmt'] for p in open_positions if p['symbol'] == data.p.dataname][0]
+            possize = [p['positionAmt'] for p in open_positions if p['symbol'] == symbol][0]
         except IndexError:
             possize = None
             if self.debug:
-                print(f'IndexError: list index out of range - symbol {data.p.dataname} not in current positions')
+                print(f'IndexError: list index out of range - symbol {symbol} not in current positions')
+                print(f'no position to close')
+            return None
 
         size = abs(size if size is not None else possize)
 
         if possize > 0:
-            return self.sell(data=data, size=size, **kwargs)
+            return self.sell(owner=owner, data=data, size=size, **kwargs)
         elif possize < 0:
-            return self.buy(data=data, size=size, **kwargs)
+            return self.buy(owner=owner, data=data, size=size, **kwargs)
         elif possize is None:
             if self.debug:
                 print(f'no position to close')
