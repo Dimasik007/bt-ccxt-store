@@ -362,7 +362,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
         return order
 
     def get_orders_open(self, safe=False, symbol=None):
-        ret = self.store.fetch_open_orders()
+        # todo account for multiple symbols passed to symbol
+        ret = self.store.fetch_open_orders(symbol=symbol)
         if symbol:
             return [o for o in ret if o["symbol"] == symbol]
         return ret
