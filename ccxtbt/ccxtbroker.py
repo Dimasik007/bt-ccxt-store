@@ -179,6 +179,9 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             pos = pos.clone()
         return pos
 
+    def get_positions(self):
+        return self.store.get_binance_positions()
+
     def next(self):
         if self.debug:
             print('Broker next() called')
