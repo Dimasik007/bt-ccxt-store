@@ -247,6 +247,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             print(f'entering _submit method')
 
         order_type = self.order_types.get(exectype)  # if exectype else 'market'
+        if order_type is None:
+            order_type = 'market'
         created = int(data.datetime.datetime(0).timestamp() * 1000)
         # Extract CCXT specific params if passed to the order
         params = params['params'] if 'params' in params else params
