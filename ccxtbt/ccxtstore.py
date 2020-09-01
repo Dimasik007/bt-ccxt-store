@@ -202,7 +202,11 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
 
     @retry
     def cancel_order(self, order_id, symbol, params):
-        return self.exchange.cancel_order(order_id, symbol, params=params)
+        try:
+            return self.exchange.cancel_order(order_id, symbol, params=params)
+        except OrderNotFound:
+            # todo not the best fix for the cases when orders are cancelled via UI - improve later
+            return {'status': 'canceled'}
 
     @retry
     def fetch_trades(self, symbol):

@@ -361,9 +361,15 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             print('Value Expected: {}'.format(self.mappings['canceled_order']['value']))
 
         if ccxt_order[self.mappings['canceled_order']['key']] == self.mappings['canceled_order']['value']:
-            self.open_orders.remove(order)
-            order.cancel()
-            self.notify(order)
+            try:
+                # todo fix for the cases when an order was cancelled via UI
+                self.open_orders.remove(order)
+                order.cancel()
+                self.notify(order)
+            except ValueError:
+                print(f'self.open_orders\n{self.open_orders}')
+                print(f'in cancel order, order is:\n{order}')
+
         return order
 
     def get_orders_open(self, safe=False, symbol=None):
