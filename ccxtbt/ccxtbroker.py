@@ -234,6 +234,8 @@ class CCXTBroker(with_metaclass(MetaCCXTBroker, BrokerBase)):
             # Manage case when an order is being Canceled from the Exchange
             #  from https://github.com/juancols/bt-ccxt-store/
             if ccxt_order[self.mappings['canceled_order']['key']] == self.mappings['canceled_order']['value']:
+                if self.debug:
+                    print('checking for canceled status to notify of trade')
                 self.open_orders.remove(o_order)
                 o_order.cancel()
                 self.notify(o_order)
